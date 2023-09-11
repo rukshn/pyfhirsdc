@@ -10,17 +10,78 @@ from pyfhirsdc.config import get_dict_df, get_fhir_cfg, get_processor_cfg
 
 logger = logging.getLogger("default")
 
+QUESTION_TYPE_MAPPING = {
+                'select_one':'choice',
+                'select_multiple':'choice',
+                'select_boolean': 'choice',
+                'select_condition': 'choice',
+                'mapping': None,
+                '{{cql}}':None,
+                'variable':None,
+                "checkbox" : "boolean",
+                "phone" : "string",
+                "text" : "text",
+                "string" : "string",
+                "boolean" : "boolean",
+                "date" : "date",
+                "datetime" : "dateTime",
+                "time" : "time",
+                "decimal" :"decimal",
+                "display": "display",
+                "note":"display",
+                "quantity" :"quantity",
+                "integer" :"integer",
+                "number" :"integer",
+                "codeableconcept": "CodeableConcept",
+                "reference" : "Reference",
+                'group':'group',
+                'questionnaire':'group',
+                'choice':'choice',
+                'postcoordination':'note',
+                'condition':'choice'   
+}
+
+METADATA_CODES =  [
+        '{{title}}',
+        '{{exclude}}',
+        '{{include}}',
+        '{{choiceColumn}}',
+        '{{url}}',
+        '{{library}}',
+        '{{cql}}',
+        '{{id}}',
+        '{{name}}'
+         ]
+
+
+LIBRARY_NAME = "{}-l"
+
+
+# function to detect a library that had its name changed to avoid conflict in the andoid-sdk/hapi knowledge manager
+def get_pyfhirsdc_lib_name(name, force=False):
+    if force:
+        return adv_clean_name(LIBRARY_NAME.format(name))
+    
+    # resource use clean_name for their id while library use adv_clean_name, conflict should be avoided
+    elif any([clean_name(s)==name for s in [ *get_dict_df()['questionnaires'].keys(), 
+                   *get_dict_df()['libraries'].keys(), 
+                   *get_dict_df()['conditions'].keys(),
+                   *get_dict_df()['recommendations'].keys()]]):
+        return adv_clean_name(LIBRARY_NAME.format(name))
+    else:
+        return name
+
 def get_resource_name(resource_type, name):
     return resource_type.lower()+ "-"+ clean_name(name)
 
-def get_resource_url(resource_type, id):
-    return str(get_fhir_cfg().canonicalBase +  resource_type + "/" + clean_name(id))
+def get_resource_url(resource_type, id, with_version = False):
+    return str(get_fhir_cfg().canonicalBase +  resource_type + "/" + clean_name(id)) + ("|"+get_fhir_cfg().lib_version if with_version else '' )
 
 def clean_name(name, lower = True):
     ret = str(name).replace(" ","-").replace("_","-").replace("-+","-")
     return ret.lower() if lower else ret
 
-def clean_group_name(name):
+def adv_clean_name(name):
     return clean_name(name).replace('-','').replace('.','').replace('/','').replace('&','').strip()
 
 def get_custom_codesystem_url():
@@ -41,8 +102,9 @@ def inject_sub_questionnaire(df_questions, questionnaire_name):
 
     # find the questionnaire
     dict_questionnaire_df = get_dict_df()['questionnaires']
-    if questionnaire_name in dict_questionnaire_df:
-        sub_questionnaire = dict_questionnaire_df[questionnaire_name].copy()
+    # there is limitation to 31 char in the tab names
+    if questionnaire_name[:29] in dict_questionnaire_df:
+        sub_questionnaire = dict_questionnaire_df[questionnaire_name[:29]].copy()
         load_sub_questionnaire = sub_questionnaire[pd.notna(sub_questionnaire.initialExpression) | (sub_questionnaire.id=="{{library}}")]
         sub_questionnaire=sub_questionnaire[pd.isna(sub_questionnaire.initialExpression) & (sub_questionnaire.id!="{{library}}")]
         
@@ -68,6 +130,8 @@ def inject_sub_questionnaire(df_questions, questionnaire_name):
                 df_questions.loc[len(df_questions.index)]=s_row
                 #df_questions.append(s_row)
     # inject the questionnaire questions as child quesiton
+    else:
+        logger.error(f"Reference to quesitonnaire {questionnaire_name} not found (neither {questionnaire_name[:29]})")
     return df_questions
     
 def init_resource_meta(resource):
