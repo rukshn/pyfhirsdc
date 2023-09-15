@@ -1,0 +1,33 @@
+{
+  "resourceType": "Provenance",
+  "id": "{id}",
+  "target": [
+    {
+      "reference": "ImplementationGuide/_history/{version}"
+    }
+  ],
+  "recorded": "{provenanceDateTime}",
+  "occurredDateTime": "{provenanceDateTime}",
+  "agent": [
+    {
+      "type": {
+        "coding": [
+          {
+            "code": "author"
+          }
+        ]
+      },
+      "who": {
+        "reference": "Organization/who-int"
+      }
+    }
+  ],
+  "activity": {
+    "text": "{update}",
+    "coding": [
+      {
+        "code": "update"
+      }
+    ]
+  }
+}

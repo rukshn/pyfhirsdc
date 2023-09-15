@@ -10,6 +10,7 @@ from pyfhirsdc.services.generateConditions import generate_conditions
 from pyfhirsdc.services.generateCodeSystem import generate_custom_code_system
 from pyfhirsdc.services.generateLibraries import generate_libraries
 from pyfhirsdc.services.generateValueSet import generate_value_sets
+from pyfhirsdc.services.generateProvenance import generateProvenance
 
 from .generatePlanDefinitions import generate_plandefinitions
 from .generateProfiles import generate_profiles
@@ -57,6 +58,8 @@ def process_input_file(conf):
 
             # generate changes
             generateChagnes() 
+            #generate provanence
+            generateProvenance()
             # Bundle https://github.com/jkiddo/ember
             # Generate the l2 excel file in json
             excel_to_json(input_file_sheets, input_file)

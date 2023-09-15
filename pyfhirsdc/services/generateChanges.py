@@ -7,16 +7,23 @@ from pyfhirsdc.serializers.utils import get_page_content_path, write_page_conten
 
 logger = logging.getLogger("default")
 
-
-def generateChagnes():
-    logger.info("processing changes................")
-
+# This function reads the DAK-Intermediate file and returns the changes
+def parseChanges():
     changes = []
-    dfs_changes = get_dict_df()["changes"]
-    #dfs_changes.reset_index()
-    #dfs_changes.iloc[1:]
+    df_changes = get_dict_df()['changes']
+    if (len(df_changes.index) > 0):
+        return df_changes
+    else:
+        return None         
 
-    if len(dfs_changes.index > 0):
+# Write the changelog to the changes.md file in the IG
+# By using the changes collected from the parseChanges() file
+def generateChagnes():
+    
+    logger.info("processing changes................")
+    dfs_changes = parseChanges()
+
+    if dfs_changes is not None:
         fileContent = []
         for index, row in dfs_changes.iterrows():
             logger.info("Saving changes for %s", row[1])
